@@ -1,10 +1,11 @@
 import sys
 import socket
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QFormLayout
+from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QFormLayout, QScrollArea, QGroupBox)
 
 class PIDSenderApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.data_fields = []  # Initialize data_fields before calling initUI
         self.initUI()
         self.my_socket = None
 
@@ -23,43 +24,22 @@ class PIDSenderApp(QWidget):
         self.port_input.setPlaceholderText('Port')
         form_layout.addRow('Port:', self.port_input)
 
-        self.pitch_p_input = QLineEdit(self)
-        self.pitch_p_input.setPlaceholderText('Pitch P')
-        form_layout.addRow('Pitch P:', self.pitch_p_input)
+        self.variable_input_layout = QVBoxLayout()
+        self.add_variable_input()
 
-        self.pitch_i_input = QLineEdit(self)
-        self.pitch_i_input.setPlaceholderText('Pitch I')
-        form_layout.addRow('Pitch I:', self.pitch_i_input)
+        add_variable_button = QPushButton('Add Variable', self)
+        add_variable_button.clicked.connect(self.add_variable_input)
+        form_layout.addRow(add_variable_button)
 
-        self.pitch_d_input = QLineEdit(self)
-        self.pitch_d_input.setPlaceholderText('Pitch D')
-        form_layout.addRow('Pitch D:', self.pitch_d_input)
-
-        self.roll_p_input = QLineEdit(self)
-        self.roll_p_input.setPlaceholderText('Roll P')
-        form_layout.addRow('Roll P:', self.roll_p_input)
-
-        self.roll_i_input = QLineEdit(self)
-        self.roll_i_input.setPlaceholderText('Roll I')
-        form_layout.addRow('Roll I:', self.roll_i_input)
-
-        self.roll_d_input = QLineEdit(self)
-        self.roll_d_input.setPlaceholderText('Roll D')
-        form_layout.addRow('Roll D:', self.roll_d_input)
-
-        self.yaw_p_input = QLineEdit(self)
-        self.yaw_p_input.setPlaceholderText('Yaw P')
-        form_layout.addRow('Yaw P:', self.yaw_p_input)
-
-        self.yaw_i_input = QLineEdit(self)
-        self.yaw_i_input.setPlaceholderText('Yaw I')
-        form_layout.addRow('Yaw I:', self.yaw_i_input)
-
-        self.yaw_d_input = QLineEdit(self)
-        self.yaw_d_input.setPlaceholderText('Yaw D')
-        form_layout.addRow('Yaw D:', self.yaw_d_input)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_content = QWidget()
+        self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_layout.addLayout(self.variable_input_layout)
+        self.scroll_area.setWidget(self.scroll_content)
 
         self.layout.addLayout(form_layout)
+        self.layout.addWidget(self.scroll_area)
 
         self.connect_button = QPushButton('Connect', self)
         self.connect_button.clicked.connect(self.connect_to_server)
@@ -73,6 +53,17 @@ class PIDSenderApp(QWidget):
         self.layout.addWidget(self.status_label)
 
         self.setLayout(self.layout)
+
+    def add_variable_input(self):
+        layout = QHBoxLayout()
+        name_input = QLineEdit(self)
+        name_input.setPlaceholderText('Variable Name')
+        value_input = QLineEdit(self)
+        value_input.setPlaceholderText('Value')
+        layout.addWidget(name_input)
+        layout.addWidget(value_input)
+        self.variable_input_layout.addLayout(layout)
+        self.data_fields.append((name_input, value_input))
 
     def connect_to_server(self):
         try:
@@ -90,19 +81,14 @@ class PIDSenderApp(QWidget):
                 self.status_label.setText("Not connected to server")
                 return
 
-            pitch_p = float(self.pitch_p_input.text())
-            pitch_i = float(self.pitch_i_input.text())
-            pitch_d = float(self.pitch_d_input.text())
-            roll_p = float(self.roll_p_input.text())
-            roll_i = float(self.roll_i_input.text())
-            roll_d = float(self.roll_d_input.text())
-            yaw_p = float(self.yaw_p_input.text())
-            yaw_i = float(self.yaw_i_input.text())
-            yaw_d = float(self.yaw_d_input.text())
+            data = []
+            for name_input, value_input in self.data_fields:
+                name = name_input.text()
+                value = float(value_input.text())
+                data.append(f"{name}:{value}")
 
-            # Create the data string
-            data = f"pitch_p:{pitch_p},pitch_i:{pitch_i},pitch_d:{pitch_d},roll_p:{roll_p},roll_i:{roll_i},roll_d:{roll_d},yaw_p:{yaw_p},yaw_i:{yaw_i},yaw_d:{yaw_d}"
-            data_bytes = data.encode()
+            data_string = ",".join(data)
+            data_bytes = data_string.encode()
 
             # Calculate checksum
             checksum = sum(data_bytes) % 256

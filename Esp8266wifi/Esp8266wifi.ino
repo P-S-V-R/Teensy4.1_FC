@@ -6,7 +6,7 @@ const char* password = "56785678";
 WiFiServer server(80);
 
 void setup() {
-  Serial.begin(115200); // Serial for both debugging and communication with Teensy
+  Serial.begin(115200);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -15,6 +15,8 @@ void setup() {
   }
 
   Serial.println("Connected to WiFi");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
   server.begin();
 }
 
@@ -60,6 +62,10 @@ bool receivePacket(WiFiClient& client) {
   }
 
   // Validate checksum
+  if (index == 0 || index >= PACKET_MAX_SIZE) {
+    return false; // No valid data received
+  }
+  
   uint8_t received_checksum = packet[index - 1];
   checksum -= received_checksum; // Adjust checksum calculation
 
@@ -81,43 +87,19 @@ void processPacket(uint8_t* data) {
   String receivedData = String((char*)data);
 
   // Parse the data
-  float pitch_p = getFloatValue(receivedData, "pitch_p");
-  float pitch_i = getFloatValue(receivedData, "pitch_i");
-  float pitch_d = getFloatValue(receivedData, "pitch_d");
-  float roll_p = getFloatValue(receivedData, "roll_p");
-  float roll_i = getFloatValue(receivedData, "roll_i");
-  float roll_d = getFloatValue(receivedData, "roll_d");
-  float yaw_p = getFloatValue(receivedData, "yaw_p");
-  float yaw_i = getFloatValue(receivedData, "yaw_i");
-  float yaw_d = getFloatValue(receivedData, "yaw_d");
+  int startIndex = 0;
+  while (startIndex < receivedData.length()) {
+    int endIndex = receivedData.indexOf(',', startIndex);
+    if (endIndex == -1) endIndex = receivedData.length();
 
-  Serial.printf("Pitch P: %f, Pitch I: %f, Pitch D: %f\n", pitch_p, pitch_i, pitch_d);
-  Serial.printf("Roll P: %f, Roll I: %f, Roll D: %f\n", roll_p, roll_i, roll_d);
-  Serial.printf("Yaw P: %f, Yaw I: %f, Yaw D: %f\n", yaw_p, yaw_i, yaw_d);
+    String pair = receivedData.substring(startIndex, endIndex);
+    int separatorIndex = pair.indexOf(':');
+    if (separatorIndex != -1) {
+      String key = pair.substring(0, separatorIndex);
+      float value = pair.substring(separatorIndex + 1).toFloat();
+      Serial.printf("%s: %f\n", key.c_str(), value);
+    }
 
-  // Send the values to the Teensy
-  sendToTeensy(pitch_p, pitch_i, pitch_d, roll_p, roll_i, roll_d, yaw_p, yaw_i, yaw_d);
-}
-
-float getFloatValue(String data, String key) {
-  int startIndex = data.indexOf(key + ":");
-  if (startIndex == -1) return 0.0;
-
-  startIndex += key.length() + 1;
-  int endIndex = data.indexOf(",", startIndex);
-  if (endIndex == -1) endIndex = data.length();
-
-  return data.substring(startIndex, endIndex).toFloat();
-}
-
-void sendToTeensy(float pitch_p, float pitch_i, float pitch_d, float roll_p, float roll_i, float roll_d, float yaw_p, float yaw_i, float yaw_d) {
-  Serial.print("pitch_p:"); Serial.println(pitch_p, 6);
-  Serial.print("pitch_i:"); Serial.println(pitch_i, 6);
-  Serial.print("pitch_d:"); Serial.println(pitch_d, 6);
-  Serial.print("roll_p:"); Serial.println(roll_p, 6);
-  Serial.print("roll_i:"); Serial.println(roll_i, 6);
-  Serial.print("roll_d:"); Serial.println(roll_d, 6);
-  Serial.print("yaw_p:"); Serial.println(yaw_p, 6);
-  Serial.print("yaw_i:"); Serial.println(yaw_i, 6);
-  Serial.print("yaw_d:"); Serial.println(yaw_d, 6);
+    startIndex = endIndex + 1;
+  }
 }
