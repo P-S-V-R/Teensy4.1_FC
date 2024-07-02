@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 
-const char* ssid = "ssid";
-const char* password = "password";
+const char* ssid = "OnePlus 8 Pro";
+const char* password = "56785678";
 
 WiFiServer server(80);
 
@@ -103,29 +103,3 @@ void processPacket(uint8_t* data) {
     startIndex = endIndex + 1;
   }
 }
-<<<<<<< HEAD
-=======
-
-float getFloatValue(String data, String key) {
-  int startIndex = data.indexOf(key + ":");
-  if (startIndex == -1) return 0.0;
-
-  startIndex += key.length() + 1;
-  int endIndex = data.indexOf(",", startIndex);
-  if (endIndex == -1) endIndex = data.length();
-
-  return data.substring(startIndex, endIndex).toFloat();
-}
-
-void sendToTeensy(float pitch_p, float pitch_i, float pitch_d, float roll_p, float roll_i, float roll_d, float yaw_p, float yaw_i, float yaw_d) {
-  Serial.print("pitch_p:"); Serial.println(pitch_p, 6);
-  Serial.print("pitch_i:"); Serial.println(pitch_i, 6);
-  Serial.print("pitch_d:"); Serial.println(pitch_d, 6);
-  Serial.print("roll_p:"); Serial.println(roll_p, 6);
-  Serial.print("roll_i:"); Serial.println(roll_i, 6);
-  Serial.print("roll_d:"); Serial.println(roll_d, 6);
-  Serial.print("yaw_p:"); Serial.println(yaw_p, 6);
-  Serial.print("yaw_i:"); Serial.println(yaw_i, 6);
-  Serial.print("yaw_d:"); Serial.println(yaw_d, 6);
-}
->>>>>>> 06eff679d0ba5b0326a34b59f13daed039dcc42f
