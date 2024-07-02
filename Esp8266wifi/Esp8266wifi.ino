@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 
-const char* ssid = "OnePlus 8 Pro";
-const char* password = "56785678";
+const char* ssid = "ssid";
+const char* password = "password";
 
 WiFiServer server(80);
 
